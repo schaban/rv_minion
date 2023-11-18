@@ -70,6 +70,9 @@ typedef struct _MINION {
 	uint32_t fcsr;
 	uint32_t instrsExecuted;
 	void* pStkMem;
+	void* pUser;
+	void (*ecall_fn)(struct _MINION*);
+	void (*ebreak_fn)(struct _MINION*);
 	MINION_MEM_MAP memMap[16];
 } MINION;
 

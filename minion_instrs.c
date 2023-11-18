@@ -270,6 +270,18 @@ static void sys_ops(MINION* pMi, uint32_t instr, uint32_t mode) {
 		       pOpName
 		);
 	}
+
+	if (mode & MINION_IMODE_EXEC) {
+		if (imm == 0) {
+			if (pMi->ecall_fn) {
+				pMi->ecall_fn(pMi);
+			}
+		} else if (imm == 1) {
+			if (pMi->ebreak_fn) {
+				pMi->ebreak_fn(pMi);
+			}
+		}
+	}
 }
 
 static void load_ops(MINION* pMi, uint32_t instr, uint32_t mode) {
