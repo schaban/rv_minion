@@ -1,0 +1,9 @@
+_TMP_DIR_="tmp"
+_ARC_DIR_="$_TMP_DIR_/arc"
+_BUILD_DIR_="$_TMP_DIR_/build"
+
+CROSS_TGT_NAME=riscv32
+CROSS_TGT=$CROSS_TGT_NAME-elf
+
+CROSS_PATH="$PWD/cross-$CROSS_TGT_NAME"
+

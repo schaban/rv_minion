@@ -1,0 +1,4 @@
+tmp/*
+gcc/tmp/*
+gcc/cross-riscv32/*
+a.out
