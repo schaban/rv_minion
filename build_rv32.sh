@@ -20,7 +20,7 @@ $_CC_ $BARE_OPTS -fno-inline -O3 -march=rv32g -c $PROJ_NAME.c -o $OUT_DIR/$PROJ_
 $_LD_ --section-start=.text=C0000 -nostdlib $OUT_DIR/$PROJ_NAME.o -o $OUT_DIR/$PROJ_NAME.elf
 $_OBJCOPY_ -O binary $OUT_DIR/$PROJ_NAME.elf $OUT_DIR/$PROJ_NAME.bin
 $_OBJDUMP_ -d $OUT_DIR/$PROJ_NAME.elf > $OUT_DIR/$PROJ_NAME.txt
-$_READELF_ -s $OUT_DIR/$PROJ_NAME.elf | tail -n +5 > $OUT_DIR/$PROJ_NAME.info
+$_READELF_ -s --wide $OUT_DIR/$PROJ_NAME.elf | tail -n +5 > $OUT_DIR/$PROJ_NAME.info
 cat $OUT_DIR/$PROJ_NAME.info | awk '$4 == "FUNC" {print $2 " " $3 " " $8}' > $OUT_DIR/$PROJ_NAME.func
 cat $OUT_DIR/$PROJ_NAME.info | awk '$8 == ".text" {print "$code " $2}' > $OUT_DIR/$PROJ_NAME.code
 cat $OUT_DIR/$PROJ_NAME.info | awk '$8 == ".data" {print "$data " $2}' > $OUT_DIR/$PROJ_NAME.data
