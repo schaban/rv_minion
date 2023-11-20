@@ -19,6 +19,10 @@ static int get_rs2(uint32_t instr) {
 	return (instr >> 20) & 0x1F;
 }
 
+static int get_rs3(uint32_t instr) {
+	return (instr >> 27) & 0x1F;
+}
+
 static int get_funct3(uint32_t instr) {
 	return (instr >> 12) & 7;
 }
@@ -928,8 +932,76 @@ static void f_calc_common(MINION* pMi, uint32_t instr, uint32_t mode) {
 	}
 }
 
+static void f_calc_fused_s(MINION* pMi, uint32_t instr, uint32_t mode) {
+	uint32_t op = (instr >> 2) & 7;
+	int rd = get_rd(instr);
+	int rs1 = get_rs1(instr);
+	int rs2 = get_rs2(instr);
+	int rs3 = get_rs3(instr);
+
+	if (mode & MINION_IMODE_ECHO) {
+		const char* pOpName = "<f-fused-S>";
+		switch (op) {
+			case 0:
+				pOpName = "fmadd.s";
+				break;
+			case 1:
+				pOpName = "fmsub.s";
+				break;
+			case 2:
+				pOpName = "fnmsub.s";
+				break;
+			case 3:
+				pOpName = "fnmadd.s";
+				break;
+		}
+		minion_msg(pMi, "%08X: %08X  %s  %s, %s, %s, %s\n", pMi->pc, instr,
+		           pOpName,
+		           minion_get_f_reg_name(rd),
+		           minion_get_f_reg_name(rs1),
+		           minion_get_f_reg_name(rs2),
+		           minion_get_f_reg_name(rs3)
+		);
+	}
+
+	if (mode & MINION_IMODE_EXEC) {
+		float val1 = minion_get_freg_s(pMi, rs1);
+		float val2 = minion_get_freg_s(pMi, rs2);
+		float val3 = minion_get_freg_s(pMi, rs3);
+		float res;
+		switch (op) {
+			case 0:
+				/* fmadd.s */
+				res = val1*val2 + val3;
+				break;
+			case 1:
+				/* fmsub.s */
+				res = val1*val2 - val3;
+				break;
+			case 2:
+				/* fnmsub.s */
+				res = -(val1*val2 - val3);
+				break;
+			case 3:
+				/* fnmadd.s */
+				res = -(val1*val2 + val3);
+				break;
+		}
+		minion_set_freg_s(pMi, rd, res);
+	}
+}
+
+static void f_calc_fused_d(MINION* pMi, uint32_t instr, uint32_t mode) {
+	minion_msg(pMi, "%08X: %08X  !f-fused-D!\n", pMi->pc, instr);
+}
+
 static void f_calc_fused(MINION* pMi, uint32_t instr, uint32_t mode) {
-	minion_msg(pMi, "%08X: %08X  !f-fused!\n", pMi->pc, instr);
+	int s = (instr >> 25) & 3;
+	if (s == 0) {
+		f_calc_fused_s(pMi, instr, mode);
+	} else if (s == 1) {
+		f_calc_fused_d(pMi, instr, mode);
+	}
 }
 
 static void f_sys_ops(MINION* pMi, uint32_t instr, uint32_t mode) {
