@@ -15,8 +15,9 @@ _READELF_=$XPREFIX-readelf
 mkdir -p $OUT_DIR
 
 BARE_OPTS="-ffreestanding -nostartfiles -nostdlib -fno-builtin -fno-stack-protector -fno-PIC -ffp-contract=off"
+FAST_OPTS=${FAST_OPTS-"-ffp-contract=fast -ffast-math"}
 
-$_CC_ $BARE_OPTS -fno-inline -O3 -march=rv32g -c $PROJ_NAME.c -o $OUT_DIR/$PROJ_NAME.o $*
+$_CC_ $BARE_OPTS $FAST_OPTS -fno-inline -O3 -march=rv32g -c $PROJ_NAME.c -o $OUT_DIR/$PROJ_NAME.o $*
 $_LD_ --section-start=.text=C0000 -nostdlib $OUT_DIR/$PROJ_NAME.o -o $OUT_DIR/$PROJ_NAME.elf
 $_OBJCOPY_ -O binary $OUT_DIR/$PROJ_NAME.elf $OUT_DIR/$PROJ_NAME.bin
 $_OBJDUMP_ -d $OUT_DIR/$PROJ_NAME.elf > $OUT_DIR/$PROJ_NAME.txt
