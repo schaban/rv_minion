@@ -4,6 +4,9 @@ static int s_binInfo = 0;
 static int s_echoInstrs = 0;
 static int s_execDbg = 0;
 
+static int s_perfNative = 0;
+static int s_perfCount = 0;
+
 static int s_binMem = 0;
 const char* s_pBinPath = NULL;
 static void* s_pBinData = NULL;
@@ -330,6 +333,39 @@ static void test_fib(MINION* pMi) {
 }
 
 
+__attribute__((noinline)) static void perf_sincos_s(MINION* pMi) {
+	int i;
+	int ifnSinS = minion_find_func(pMi, "sin_s");
+	int ifnCosS = minion_find_func(pMi, "cos_s");
+	float val0 = -8.0f * PI_F;
+	float val1 = 8.0f * PI_F;
+	int n = s_perfCount > 0 ? s_perfCount : 1000000;
+	float add = (val1 - val0) / (float)n;
+	float x = val0;
+	float sum = 0.0f;
+	pMi->instrsExecuted = 0;
+	for (i = 0; i <= n; ++i) {
+		float s;
+		float c;
+		if (s_perfNative) {
+			s = sin_s(x);
+			c = cos_s(x);
+		} else {
+			minion_set_fa0_s(pMi, x);
+			minion_set_pc_to_func_idx(pMi, ifnSinS);
+			test_exec_from_pc(pMi);
+			s = minion_get_fa0_s(pMi);
+			minion_set_fa0_s(pMi, x);
+			minion_set_pc_to_func_idx(pMi, ifnCosS);
+			test_exec_from_pc(pMi);
+			c = minion_get_fa0_s(pMi);
+		}
+		sum += s*s + c*c;
+		x += add;
+	}
+	minion_msg(pMi, "%s sum = %f\n", s_perfNative ? "native" : "minion", sum);
+	minion_msg(pMi, "instrs executed: %d\n", pMi->instrsExecuted);
+}
 
 
 static void cli_opts(int argc, char* argv[]) {
@@ -359,6 +395,10 @@ static void cli_opts(int argc, char* argv[]) {
 				s_pBinPath = pOpt + offs;
 			} else if ((offs = opt_prefix(pOpt, "--test=")) > 0) {
 				s_pTestName = pOpt + offs;
+			} else if (strcmp(pOpt,  "--perf-native") == 0) {
+				s_perfNative = 1;
+			} else if ((offs = opt_prefix(pOpt, "--perf-count=")) > 0) {
+				s_perfCount = atoi(pOpt + offs);
 			}
 		}
 	}
@@ -404,6 +444,8 @@ int main(int argc, char* argv[]) {
 			test_cos_s(&mi);
 		} else if (strcmp(s_pTestName,  "1op_s") == 0) {
 			test_f_1op_s(&mi);
+		} else if (strcmp(s_pTestName,  "perf_sincos_s") == 0) {
+			perf_sincos_s(&mi);
 		}
 	} else {
 		minion_sys_err("Corrupted minion!\n");
