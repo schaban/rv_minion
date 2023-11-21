@@ -6,13 +6,12 @@
 
 static int s_silentFlg = 0;
 
-
 static const char* skip_space(const char* pStr) {
 	while (1) {
 		char c = *pStr;
 		if (!c) return pStr;
 		if (c != ' ') return pStr;
-		pStr++;
+		++pStr;
 	}
 }
 
@@ -21,7 +20,7 @@ static const char* skip_chars(const char* pStr) {
 		char c = *pStr;
 		if (!c) return pStr;
 		if (c == ' ' || c == '\n') return pStr;
-		pStr++;
+		++pStr;
 	}
 }
 
@@ -140,7 +139,7 @@ uint32_t minion_mem_map(MINION* pMi, void* p, uint32_t size) {
 	} else {
 		int i;
 		int idx = -1;
-		for (i = 0; i < 16; i++) {
+		for (i = 0; i < 16; ++i) {
 			if (pMi->memMap[i].vptr == 0) {
 				idx = i;
 			}
@@ -172,7 +171,7 @@ void minion_mem_unmap(MINION* pMi, uint32_t vptr) {
 int minion_find_func(MINION* pMi, const char* pFnName) {
 	int i;
 	if (pMi && pFnName && pMi->pFuncs) {
-		for (i = 0; i < pMi->nfuncs; i++) {
+		for (i = 0; i < pMi->nfuncs; ++i) {
 			if (strcmp(pFnName, pMi->pFuncs[i].pName) == 0) {
 				return i;
 			}
@@ -205,12 +204,89 @@ uint32_t minion_get_func_instr_count(MINION* pMi, const char* pFnName) {
 	return n;
 }
 
+typedef struct _MINION_IN_STREAM {
+	FILE* pFile;
+	void* pMem;
+	long offs;
+	size_t size;
+} MINION_IN_STREAM;
 
-void minion_bin_read(MINION_BIN* pBin, FILE* pFile) {
+static char* ins_gets(MINION_IN_STREAM* pIn, MINION_BIN* pBin) {
+	char* pStr = NULL;
+	if (pIn && pBin) {
+		if (pIn->pFile) {
+			pStr = fgets(pBin->tmpStr, MINION_TSTR_SIZE, pIn->pFile);
+		} else if (pIn->pMem) {
+			size_t len = 0;
+			long offs = pIn->offs;
+			char* p = (char*)pIn->pMem;
+			while (1) {
+				char c;
+				if (offs >= pIn->size) {
+					break;
+				}
+				c = p[offs];
+				++offs;
+				if (c == '\n') {
+					break;
+				}
+			}
+			len = offs - pIn->offs;
+			if (len < MINION_TSTR_SIZE-1) {
+				pStr = pBin->tmpStr;
+				memcpy(pStr, (char*)pIn->pMem + pIn->offs, len);
+				pStr[len] = 0;
+			}
+			pIn->offs = offs;
+		}
+	}
+	return pStr;
+}
+
+static size_t ins_read(MINION_IN_STREAM* pIn, void* pDst, size_t size) {
+	size_t nread = 0;
+	if (pIn && pDst) {
+		if (pIn->pFile) {
+			nread = fread(pDst, 1, size, pIn->pFile);
+		} else if (pIn->pMem) {
+			long noffs = pIn->offs + (long)size;
+			if (pDst && (noffs <= pIn->size)) {
+				memcpy(pDst, (uint8_t*)pIn->pMem + pIn->offs, size);
+				pIn->offs = noffs;
+				nread = size;
+			}
+		}
+	}
+	return nread;
+}
+
+static long ins_offs(MINION_IN_STREAM* pIn) {
+	long offs = 0;
+	if (pIn) {
+		if (pIn->pFile) {
+			offs = ftell(pIn->pFile);
+		} else if (pIn->pMem) {
+			offs = pIn->offs;
+		}
+	}
+	return offs;
+}
+
+static void ins_seek(MINION_IN_STREAM* pIn, long offs) {
+	if (pIn) {
+		if (pIn->pFile) {
+			fseek(pIn->pFile, offs, SEEK_SET);
+		} else if (pIn->pMem) {
+			pIn->offs = offs;
+		}
+	}
+}
+
+static void minion_bin_in(MINION_BIN* pBin, MINION_IN_STREAM* pIn) {
 	int i;
 	size_t nameMemSize = 0;
 	long funcsLstOffs = 0;
-	char* pStr = pBin ? fgets(pBin->tmpStr, MINION_TSTR_SIZE, pFile) : NULL;
+	char* pStr = ins_gets(pIn, pBin);
 	const char* pVer = ck_str_cmd(pStr, "MINION");
 	if (!pVer) {
 		minion_sys_err("Not a MINION!\n");
@@ -220,7 +296,7 @@ void minion_bin_read(MINION_BIN* pBin, FILE* pFile) {
 
 	while (1) {
 		const char* pArg;
-		pStr = fgets(pBin->tmpStr, MINION_TSTR_SIZE, pFile);
+		pStr = ins_gets(pIn, pBin);
 		pArg = ck_str_cmd(pStr, "$code");
 		if ((pArg = ck_str_cmd(pStr, "$code"))) {
 			pBin->codeOrg = u32_hex(pArg, skip_chars(pArg) - pArg);
@@ -234,21 +310,21 @@ void minion_bin_read(MINION_BIN* pBin, FILE* pFile) {
 			size_t nread;
 			pBin->binSize = (uint32_t)atoi(pArg);
 			pBin->pBinMem = malloc(pBin->binSize);
-			nread = fread(pBin->pBinMem, 1, pBin->binSize, pFile);
+			nread = ins_read(pIn, pBin->pBinMem, pBin->binSize);
 			if (nread != pBin->binSize) {
 				minion_sys_err("Incomplete binary part!\n");
 			}
 		} else if ((pArg = ck_str_cmd(pStr, "$funcs"))) {
 			pBin->nfuncs = atoi(pArg);
 			pBin->pFuncs = (MINION_FUNC_INFO*)malloc(pBin->nfuncs * sizeof(MINION_FUNC_INFO));
-			funcsLstOffs = ftell(pFile);
-			for (i = 0; i < pBin->nfuncs; i++) {
+			funcsLstOffs = ins_offs(pIn);
+			for (i = 0; i < pBin->nfuncs; ++i) {
 				uint32_t funcAddr;
 				uint32_t funcSize;
 				const char* pSizeArg;
 				const char* pNameArg;
 				uint32_t nameSize;
-				pStr = fgets(pBin->tmpStr, MINION_TSTR_SIZE, pFile);
+				pStr = ins_gets(pIn, pBin);
 				pSizeArg = skip_space(skip_chars(pStr));
 				pNameArg = skip_space(skip_chars(pSizeArg));
 				funcAddr = u32_hex(pStr, skip_chars(pStr) - pStr);
@@ -265,15 +341,15 @@ void minion_bin_read(MINION_BIN* pBin, FILE* pFile) {
 
 	if (pBin->nfuncs && nameMemSize && funcsLstOffs > 0) {
 		char* pNameMem;
-		fseek(pFile, funcsLstOffs, SEEK_SET);
+		ins_seek(pIn, funcsLstOffs);
 		pBin->pNameMem = (char*)malloc(nameMemSize);
 		memset(pBin->pNameMem, 0, nameMemSize);
 		pNameMem = pBin->pNameMem;
-		for (i = 0; i < pBin->nfuncs; i++) {
+		for (i = 0; i < pBin->nfuncs; ++i) {
 			const char* pSizeArg;
 			const char* pNameArg;
 			uint32_t nameSize;
-			pStr = fgets(pBin->tmpStr, MINION_TSTR_SIZE, pFile);
+			pStr = ins_gets(pIn, pBin);
 			pSizeArg = skip_space(skip_chars(pStr));
 			pNameArg = skip_space(skip_chars(pSizeArg));
 			nameSize = (uint32_t)(skip_chars(pNameArg) - pNameArg);
@@ -296,7 +372,7 @@ void minion_bin_info(MINION_BIN* pBin) {
 	minion_sys_msg("binSize: %d (0x%X)\n", pBin->binSize, pBin->binSize);
 	minion_sys_msg("pBinMem: %p\n", pBin->pBinMem);
 	if (pBin->pFuncs) {
-		for (i = 0; i < pBin->nfuncs; i++) {
+		for (i = 0; i < pBin->nfuncs; ++i) {
 			uint32_t fnSize = pBin->pFuncs[i].size;
 			minion_sys_msg("func[%d]: %s @ %X, size=%d (0x%X, nins=%d)\n",
 			       i, pBin->pFuncs[i].pName, pBin->pFuncs[i].addr, fnSize, fnSize, fnSize/4);
@@ -304,10 +380,40 @@ void minion_bin_info(MINION_BIN* pBin) {
 	}
 }
 
+void minion_bin_from_mem(MINION_BIN* pBin, void* pMem, size_t memSize) {
+	if (pBin && pMem && memSize > 0) {
+		MINION_IN_STREAM ins;
+		ins.pFile = NULL;
+		ins.pMem = pMem;
+		ins.offs = 0;
+		ins.size = memSize;
+		minion_bin_in(pBin, &ins);
+	} else {
+		minion_sys_err("bin_from_mem error\n");
+	}
+}
+
+static void minion_bin_read(MINION_BIN* pBin, FILE* pFile) {
+	if (pFile && pBin) {
+		MINION_IN_STREAM ins;
+		ins.pFile = pFile;
+		ins.pMem = NULL;
+		minion_bin_in(pBin, &ins);
+	}
+}
+
 void minion_bin_load(MINION_BIN* pBin, const char* pPath) {
-	FILE* pFile = fopen(pPath, "r+b");
-	minion_bin_read(pBin, pFile);
-	fclose(pFile);
+	if (pPath) {
+		FILE* pFile = fopen(pPath, "r+b");
+		if (pFile) {
+			minion_bin_read(pBin, pFile);
+			fclose(pFile);
+		} else {
+			minion_sys_err("Can't find \"%s\".\n", pPath);
+		}
+	} else {
+		minion_sys_err("No bin path.\n");
+	}
 }
 
 void minion_bin_free(MINION_BIN* pBin) {

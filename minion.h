@@ -90,7 +90,7 @@ int minion_valid_func_idx(MINION* pMi, int ifn);
 void minion_set_pc_to_func_idx(MINION* pMi, int ifn);
 void minion_set_pc_to_func(MINION* pMi, const char* pFnName);
 uint32_t minion_get_func_instr_count(MINION* pMi, const char* pFnName);
-void minion_bin_read(MINION_BIN* pBin, FILE* pFile);
+void minion_bin_from_mem(MINION_BIN* pBin, void* pMem, size_t memSize);
 void minion_bin_load(MINION_BIN* pBin, const char* pPath);
 void minion_bin_free(MINION_BIN* pBin);
 void minion_bin_info(MINION_BIN* pBin);
