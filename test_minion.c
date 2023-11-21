@@ -4,6 +4,14 @@ static int s_binInfo = 0;
 static int s_echoInstrs = 0;
 static int s_execDbg = 0;
 
+static int s_binMem = 0;
+const char* s_pBinPath = NULL;
+static void* s_pBinData = NULL;
+static size_t s_binDataSize = 0;
+
+static const char* s_pTestName = NULL;
+
+#include "utils.c"
 
 static void test_func_dump(MINION* pMi) {
 	const char* pTestFunc = "sin_s";
@@ -247,6 +255,7 @@ static void test_sin_s(MINION* pMi) {
 	int n = 100;
 	float add = (val1 - val0) / (float)n;
 	float x = val0;
+	minion_msg(pMi, "testing sin_s...\n");
 	for (i = 0; i <= n; ++i) {
 		float res;
 		float ref = sin_s(x);
@@ -271,6 +280,7 @@ static void test_cos_s(MINION* pMi) {
 	int n = 100;
 	float add = (val1 - val0) / (float)n;
 	float x = val0;
+	minion_msg(pMi, "testing cos_s...\n");
 	for (i = 0; i <= n; ++i) {
 		float res;
 		float ref = cos_s(x);
@@ -324,6 +334,7 @@ static void test_fib(MINION* pMi) {
 
 static void cli_opts(int argc, char* argv[]) {
 	int i;
+	int offs;
 	for (i = 1; i < argc; i++) {
 		char* pOpt = argv[i];
 		size_t len = strlen(pOpt);
@@ -340,6 +351,14 @@ static void cli_opts(int argc, char* argv[]) {
 				s_echoInstrs = 1;
 			} else if (strcmp(pOpt,  "--no-echo-instrs") == 0) {
 				s_echoInstrs = 0;
+			} else if (strcmp(pOpt,  "--bin-mem") == 0) {
+				s_binMem = 1;
+			} else if (strcmp(pOpt,  "--bin-file") == 0) {
+				s_binMem = 0;
+			} else if ((offs = opt_prefix(pOpt, "--bin-path=")) > 0) {
+				s_pBinPath = pOpt + offs;
+			} else if ((offs = opt_prefix(pOpt, "--test=")) > 0) {
+				s_pTestName = pOpt + offs;
 			}
 		}
 	}
@@ -348,24 +367,47 @@ static void cli_opts(int argc, char* argv[]) {
 int main(int argc, char* argv[]) {
 	MINION_BIN miBin;
 	MINION mi;
+	s_pBinPath = "out/test.minion";
+	s_pTestName = "fib";
 	cli_opts(argc, argv);
 	memset(&miBin, 0, sizeof(miBin));
 	memset(&mi, 0, sizeof(mi));
-	minion_bin_load(&miBin, "out/test.minion");
+	if (s_binMem) {
+		s_pBinData = bin_load(s_pBinPath, &s_binDataSize);
+		minion_sys_msg("Loading binary via memory, path: \"%s\", p: %p, size = 0x%X \n", s_pBinPath, s_pBinData, s_binDataSize);
+		minion_bin_from_mem(&miBin, s_pBinData, s_binDataSize);
+	} else {
+		minion_sys_msg("Loading binary from file, path: \"%s\"\n", s_pBinPath);
+		minion_bin_load(&miBin, s_pBinPath);
+	}
 	if (s_binInfo) {
 		minion_bin_info(&miBin);
 	}
 	minion_init(&mi, &miBin);
 
-	//test_func_dump(&mi);
-	//test_inner_mem(&mi);
-	//test_mapped_mem(&mi);
-	test_fib(&mi);
-	//test_f_2op_s(&mi);
-	//test_fcvt(&mi);
-	//test_sin_s(&mi);
-	//test_cos_s(&mi);
-	//test_f_1op_s(&mi);
+	if (mi.codeOrg > 0) {
+		if (strcmp(s_pTestName,  "disasm") == 0) {
+			test_func_dump(&mi);
+		} else if (strcmp(s_pTestName,  "inner_mem") == 0) {
+			test_inner_mem(&mi);
+		} else if (strcmp(s_pTestName,  "mapped_mem") == 0) {
+			test_mapped_mem(&mi);
+		} else if (strcmp(s_pTestName,  "fib") == 0) {
+			test_fib(&mi);
+		} else if (strcmp(s_pTestName,  "2op_s") == 0) {
+			test_f_2op_s(&mi);
+		} else if (strcmp(s_pTestName,  "fcvt") == 0) {
+			test_fcvt(&mi);
+		} else if (strcmp(s_pTestName,  "sin_s") == 0) {
+			test_sin_s(&mi);
+		} else if (strcmp(s_pTestName,  "cos_s") == 0) {
+			test_cos_s(&mi);
+		} else if (strcmp(s_pTestName,  "1op_s") == 0) {
+			test_f_1op_s(&mi);
+		}
+	} else {
+		minion_sys_err("Corrupted minion!\n");
+	}
 
 	minion_bin_free(&miBin);
 	minion_release(&mi);
