@@ -909,7 +909,7 @@ static void f_calc_common_s(MINION* pMi, uint32_t instr, uint32_t mode) {
 				break;
 			case 0x1E:
 				/* fmv.w.x */
-				memcpy(&val1, &pMi->regs[rd], 4);
+				memcpy(&res, &pMi->regs[rd], 4);
 				minion_set_freg_s(pMi, rd, res);
 				break;
 			default:
