@@ -106,6 +106,18 @@ int32_t minion_get_a0(MINION* pMi) { return pMi->regs[10]; }
 void minion_set_a0(MINION* pMi, int32_t val) { pMi->regs[10] = val; }
 int32_t minion_get_a1(MINION* pMi) { return pMi->regs[11]; }
 void minion_set_a1(MINION* pMi, int32_t val) { pMi->regs[11] = val; }
+int32_t minion_get_a2(MINION* pMi) { return pMi->regs[12]; }
+void minion_set_a2(MINION* pMi, int32_t val) { pMi->regs[12] = val; }
+int32_t minion_get_a3(MINION* pMi) { return pMi->regs[13]; }
+void minion_set_a3(MINION* pMi, int32_t val) { pMi->regs[13] = val; }
+int32_t minion_get_a4(MINION* pMi) { return pMi->regs[14]; }
+void minion_set_a4(MINION* pMi, int32_t val) { pMi->regs[14] = val; }
+int32_t minion_get_a5(MINION* pMi) { return pMi->regs[15]; }
+void minion_set_a5(MINION* pMi, int32_t val) { pMi->regs[15] = val; }
+int32_t minion_get_a6(MINION* pMi) { return pMi->regs[16]; }
+void minion_set_a6(MINION* pMi, int32_t val) { pMi->regs[16] = val; }
+int32_t minion_get_a7(MINION* pMi) { return pMi->regs[17]; }
+void minion_set_a7(MINION* pMi, int32_t val) { pMi->regs[17] = val; }
 
 int32_t minion_get_t0(MINION* pMi) { return pMi->regs[5]; }
 void minion_set_t0(MINION* pMi, int32_t val) { pMi->regs[5] = val; }
