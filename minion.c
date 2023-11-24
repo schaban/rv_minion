@@ -142,8 +142,8 @@ uint32_t minion_mem_map(MINION* pMi, void* p, uint32_t size) {
 		for (i = 0; i < 16; ++i) {
 			if (pMi->memMap[i].vptr == 0) {
 				idx = i;
+				break;
 			}
-			break;
 		}
 		if (idx < 0) {
 			minion_err(pMi, "can't map memory, no free slots\n");
