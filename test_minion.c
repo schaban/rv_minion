@@ -3,6 +3,7 @@
 static int s_binInfo = 0;
 static int s_echoInstrs = 0;
 static int s_execDbg = 0;
+static int s_gbgFregs = 0;
 
 static int s_perfNative = 0;
 static int s_perfCount = 0;
@@ -43,13 +44,17 @@ static void test_exec_from_pc(MINION* pMi) {
 			minion_msg(pMi, "\n ---------------- %d\n", insCount);
 		}
 		minion_instr(pMi, instr, MINION_IMODE_EXEC | echoInstrs);
+		++insCount;
 		if (dbg) {
 			minion_dump_regs(pMi);
+			if (s_gbgFregs) {
+				minion_msg(pMi, " --- fregs ---\n");
+				minion_dump_fregs_s(pMi);
+			}
 		}
 		if (pMi->pcStatus & MINION_PCSTATUS_NATIVE) {
 			break;
 		}
-		insCount++;
 		if (insCount > 100000) {
 			minion_err(pMi, "reached execution limit!\n");
 			break;
@@ -383,6 +388,8 @@ static void cli_opts(int argc, char* argv[]) {
 				s_execDbg = 1;
 			} else if (strcmp(pOpt,  "--no-exec-dbg") == 0) {
 				s_execDbg = 0;
+			}  else if (strcmp(pOpt,  "--dbg-fregs") == 0) {
+				s_gbgFregs = 1;
 			} else if (strcmp(pOpt,  "--echo-instrs") == 0) {
 				s_echoInstrs = 1;
 			} else if (strcmp(pOpt,  "--no-echo-instrs") == 0) {
