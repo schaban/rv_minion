@@ -5,6 +5,7 @@ XPREFIX=${XPREFIX:-$DEF_XPREFIX}
 
 OUT_DIR=${OUT_DIR:-out}
 PROJ_NAME=${PROJ_NAME:-test}
+CODE_ORG=${CODE_ORG-C0000}
 
 _CC_=$XPREFIX-gcc
 _LD_=$XPREFIX-ld
@@ -18,7 +19,7 @@ BARE_OPTS="-ffreestanding -nostartfiles -nostdlib -fno-builtin -fno-stack-protec
 FAST_OPTS=${FAST_OPTS-"-ffp-contract=fast -ffast-math"}
 
 $_CC_ $BARE_OPTS $FAST_OPTS -fno-inline -O3 -march=rv32g -c $PROJ_NAME.c -o $OUT_DIR/$PROJ_NAME.o $*
-$_LD_ --section-start=.text=C0000 -nostdlib $OUT_DIR/$PROJ_NAME.o -o $OUT_DIR/$PROJ_NAME.elf
+$_LD_ --section-start=.text=$CODE_ORG -nostdlib $OUT_DIR/$PROJ_NAME.o -o $OUT_DIR/$PROJ_NAME.elf
 $_OBJCOPY_ -O binary $OUT_DIR/$PROJ_NAME.elf $OUT_DIR/$PROJ_NAME.bin
 $_OBJDUMP_ -d $OUT_DIR/$PROJ_NAME.elf > $OUT_DIR/$PROJ_NAME.txt
 $_READELF_ -s --wide $OUT_DIR/$PROJ_NAME.elf | tail -n +5 > $OUT_DIR/$PROJ_NAME.info
