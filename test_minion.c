@@ -17,6 +17,9 @@ static const char* s_pTestName = NULL;
 
 #include "utils.c"
 
+#include "sincos.c"
+#include "matrix.c"
+
 static void test_func_dump(MINION* pMi) {
 	const char* pTestFunc = "sin_s";
 	minion_set_pc_to_func(pMi, pTestFunc);
@@ -253,8 +256,6 @@ static void test_fcvt(MINION* pMi) {
 	minion_msg(pMi, "%.8f -> %.8f\n", dval, fres);
 }
 
-#include "sincos.c"
-
 static void test_sin_s(MINION* pMi) {
 	int i;
 	int ifnSinS = minion_find_func(pMi, "sin_s");
@@ -303,6 +304,95 @@ static void test_cos_s(MINION* pMi) {
 		}
 		x += add;
 	}
+}
+
+
+static void print_nnmtx(float* p,int n) {
+	if (p) {
+		int i, j;
+		for (i = 0; i < n; ++i) {
+			for (j = 0; j < n; ++j) {
+				minion_sys_msg("  %.3f", p[i*n + j]);
+			}
+			minion_sys_msg("\n");
+		}
+	}
+}
+
+static void print_nvec(float* p,int n) {
+	if (p) {
+		int i;
+		minion_sys_msg("<");
+		for (i = 0; i < n; ++i) {
+				minion_sys_msg("  %.3f", p[i]);
+		}
+		minion_sys_msg(" >\n");
+	}
+}
+
+static void test_mtx_invert_s(MINION* pMi) {
+	static float msrc[] = {
+		5.0f,  7.0f,  6.0f,  5.0f,
+		7.0f, 10.0f,  8.0f,  7.0f,
+		6.0f,  8.0f, 10.0f,  9.0f,
+		5.0f,  7.0f,  9.0f, 10.0f
+	};
+	static float vsrc[] = {
+		23.0f, 32.0f, 33.0f, 31.0f
+	};
+	int wref[4*3];
+	float mref[4*4];
+	float vref[4];
+	int wtst[4*3];
+	float mtst[4*4];
+	float vtst[4];
+	int n = 4;
+	int ifnInv = minion_find_func(pMi, "mtx_invert_s");
+	int ifnMul = minion_find_func(pMi, "mtx_mul_s");
+	uint32_t vptrMtx = minion_mem_map(pMi, mtst, sizeof(mtst)); 
+	uint32_t vptrWk = minion_mem_map(pMi, wtst, sizeof(wtst));
+	uint32_t vptrVec = minion_mem_map(pMi, vtst, sizeof(vtst));
+	uint32_t vptrVecSrc = minion_mem_map(pMi, vsrc, sizeof(vsrc));
+
+	memcpy(mref, msrc, sizeof(mref));
+	memset(wref, 0, sizeof(wref));
+	memcpy(mtst, msrc, sizeof(mtst));
+	memset(wtst, 0, sizeof(wtst));
+
+	minion_sys_msg(" --- native --- \n");
+
+	mtx_invert_s(mref, n, wref);
+	print_nnmtx(mref, n);
+	minion_sys_msg("\n");
+
+	mtx_mul_s(vref, mref, vsrc, n, n, 1);
+	print_nvec(vref, n);
+	minion_sys_msg("\n");
+
+	minion_sys_msg(" --- minion --- \n");
+
+	minion_set_a0(pMi, vptrMtx);
+	minion_set_a1(pMi, n);
+	minion_set_a2(pMi, vptrWk);
+	minion_set_pc_to_func_idx(pMi, ifnInv);
+	test_exec_from_pc(pMi);
+	print_nnmtx(mtst, n);
+	minion_sys_msg("\n");
+
+	minion_set_a0(pMi, vptrVec);
+	minion_set_a1(pMi, vptrMtx);
+	minion_set_a2(pMi, vptrVecSrc);
+	minion_set_a3(pMi, n);
+	minion_set_a4(pMi, n);
+	minion_set_a5(pMi, 1);
+	minion_set_pc_to_func_idx(pMi, ifnMul);
+	test_exec_from_pc(pMi);
+	print_nvec(vref, n);
+
+	minion_mem_unmap(pMi, vptrMtx);
+	minion_mem_unmap(pMi, vptrWk);
+	minion_mem_unmap(pMi, vptrVec);
+	minion_mem_unmap(pMi, vptrVecSrc);
 }
 
 
@@ -441,16 +531,18 @@ int main(int argc, char* argv[]) {
 			test_mapped_mem(&mi);
 		} else if (strcmp(s_pTestName,  "fib") == 0) {
 			test_fib(&mi);
-		} else if (strcmp(s_pTestName,  "2op_s") == 0) {
+		} else if (strcmp(s_pTestName,  "f_2op_s") == 0) {
 			test_f_2op_s(&mi);
+		} else if (strcmp(s_pTestName,  "f_1op_s") == 0) {
+			test_f_1op_s(&mi);
 		} else if (strcmp(s_pTestName,  "fcvt") == 0) {
 			test_fcvt(&mi);
 		} else if (strcmp(s_pTestName,  "sin_s") == 0) {
 			test_sin_s(&mi);
 		} else if (strcmp(s_pTestName,  "cos_s") == 0) {
 			test_cos_s(&mi);
-		} else if (strcmp(s_pTestName,  "1op_s") == 0) {
-			test_f_1op_s(&mi);
+		} else if (strcmp(s_pTestName,  "mtx_invert_s") == 0) {
+			test_mtx_invert_s(&mi);
 		} else if (strcmp(s_pTestName,  "perf_sincos_s") == 0) {
 			perf_sincos_s(&mi);
 		}

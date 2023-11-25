@@ -147,7 +147,7 @@ uint32_t u32_hex(const char* pStr, size_t len) {
 
 
 #include "sincos.c"
-
+#include "matrix.c"
 
 void _start() {
 	__asm volatile ("sub  a0, a0, a0");
