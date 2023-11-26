@@ -1,3 +1,5 @@
+#include <time.h>
+
 static size_t file_size(FILE* pFile) {
 	size_t size = 0;
 	if (pFile) {
@@ -84,3 +86,14 @@ static int opt_prefix(const char* pStr, const char* pPre) {
 	return offs;
 }
 
+static double time_micros() {
+	double ms = 0.0f;
+	struct timespec t;
+	clock_gettime(CLOCK_MONOTONIC_RAW, &t);
+	ms = (double)t.tv_nsec*1.0e-3 + (double)t.tv_sec*1.0e6;
+	return ms;
+}
+
+static double time_millis() {
+	return time_micros() * 1e-3;
+}
