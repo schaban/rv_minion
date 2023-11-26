@@ -5,7 +5,8 @@
 static int s_binInfo = 0;
 static int s_echoInstrs = 0;
 static int s_execDbg = 0;
-static int s_gbgFregs = 0;
+static int s_dbgFregs = 0;
+static int s_execProfile = 0;
 
 static int s_perfNative = 0;
 static int s_perfCount = 0;
@@ -42,17 +43,34 @@ static void test_func_dump(MINION* pMi) {
 static void test_exec_from_pc(MINION* pMi) {
 	int echoInstrs = s_echoInstrs ? MINION_IMODE_ECHO : 0;
 	int dbg = s_execDbg;
+	int pfl = s_execProfile;
 	uint32_t insCount = 0;
+	double t0;
+	double tacc = 0.0;
+	uint32_t pflPC;
 	while (1) {
 		uint32_t instr = minion_fetch_pc_instr(pMi);
 		if (dbg) {
 			minion_msg(pMi, "\n ---------------- %d\n", insCount);
 		}
+		if (pfl) {
+			pflPC = pMi->pc;
+			t0 = time_micros();
+		}
 		minion_instr(pMi, instr, MINION_IMODE_EXEC | echoInstrs);
+		if (pfl) {
+			double dt = time_micros() - t0;
+			if (s_echoInstrs) {
+				minion_msg(pMi, "                |-> %.4f micros\n", dt);
+			} else {
+				minion_msg(pMi, "%08X: %08X -> %.4f micros\n", pflPC, instr, dt);
+			}
+			tacc += dt;
+		}
 		++insCount;
 		if (dbg) {
 			minion_dump_regs(pMi);
-			if (s_gbgFregs) {
+			if (s_dbgFregs) {
 				minion_msg(pMi, " --- fregs ---\n");
 				minion_dump_fregs_s(pMi);
 			}
@@ -64,6 +82,9 @@ static void test_exec_from_pc(MINION* pMi) {
 			minion_err(pMi, "reached execution limit!\n");
 			break;
 		}
+	}
+	if (pfl) {
+		minion_msg(pMi, "total: %f micros (%.2f millis)\n", tacc, tacc * 1e-3);
 	}
 }
 
@@ -557,7 +578,11 @@ static void cli_opts(int argc, char* argv[]) {
 			} else if (strcmp(pOpt,  "--no-exec-dbg") == 0) {
 				s_execDbg = 0;
 			}  else if (strcmp(pOpt,  "--dbg-fregs") == 0) {
-				s_gbgFregs = 1;
+				s_dbgFregs = 1;
+			} else if (strcmp(pOpt,  "--exec-profile") == 0) {
+				s_execProfile = 1;
+			} else if (strcmp(pOpt,  "--no-exec-profile") == 0) {
+				s_execProfile = 0;
 			} else if (strcmp(pOpt,  "--echo-instrs") == 0) {
 				s_echoInstrs = 1;
 			} else if (strcmp(pOpt,  "--no-echo-instrs") == 0) {
