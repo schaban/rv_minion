@@ -1,5 +1,7 @@
 #include "minion.c"
 
+#define PERF_TEST_FN __attribute__((noinline))
+
 static int s_binInfo = 0;
 static int s_echoInstrs = 0;
 static int s_execDbg = 0;
@@ -330,6 +332,19 @@ static void print_nvec(float* p,int n) {
 	}
 }
 
+static void mk_selfinv_mtx_s(float* pMtx, int N) {
+	int i, j;
+	if (!pMtx) return;
+	for (i = 0; i < N; ++i) {
+		for (j = 0; j < N; ++j) {
+			float xi = (float)(i + 1);
+			float xj = (float)(j + 1);
+			float xn1 = (float)(N + 1);
+			pMtx[i*N + j] = (float)(sqrtf(2.0f / xn1) * sinf((xi*xj*PI_F) / xn1));
+		}
+	}
+}
+
 static void test_mtx_invert_s(MINION* pMi) {
 	static float msrc[] = {
 		5.0f,  7.0f,  6.0f,  5.0f,
@@ -428,7 +443,7 @@ static void test_fib(MINION* pMi) {
 }
 
 
-__attribute__((noinline)) static void perf_sincos_s(MINION* pMi) {
+PERF_TEST_FN static void perf_sincos_s(MINION* pMi) {
 	int i;
 	int ifnSinS = minion_find_func(pMi, "sin_s");
 	int ifnCosS = minion_find_func(pMi, "cos_s");
@@ -460,6 +475,61 @@ __attribute__((noinline)) static void perf_sincos_s(MINION* pMi) {
 	}
 	minion_msg(pMi, "%s sum = %f\n", s_perfNative ? "native" : "minion", sum);
 	minion_msg(pMi, "instrs executed: %d\n", pMi->instrsExecuted);
+}
+
+PERF_TEST_FN static void perf_mtxinv_s(MINION* pMi) {
+	int N = 10;
+	size_t mtxMemSize = N*N*sizeof(float);
+	size_t wkMemSize = N*3*sizeof(int);
+	float* pMtx = (float*)malloc(mtxMemSize);
+	int* pWk = (int*)malloc(wkMemSize);
+	int cnt = s_perfCount > 0 ? s_perfCount : 10000;
+	if (pMtx && pWk) {
+		int i;
+		float s0, s1;
+		int ifnInv = minion_find_func(pMi, "mtx_invert_s");
+		uint32_t vptrMtx = minion_mem_map(pMi, pMtx, mtxMemSize); 
+		uint32_t vptrWk = minion_mem_map(pMi, pWk, wkMemSize);
+
+		mk_selfinv_mtx_s(pMtx, N);
+
+		s0 = 0.0f;
+		for (i = 0; i < N*N; ++i) {
+			s0 += pMtx[i];
+		}
+
+		minion_sys_msg("%s: inverting %dx%d matrix %d times...\n", s_perfNative ? "native" : "minion", N, N, cnt);
+		if (s_perfNative) {
+			for (i = 0; i < cnt; ++i) {
+				mtx_invert_s(pMtx, N, pWk);
+			}
+		} else {
+			pMi->instrsExecuted = 0;
+			for (i = 0; i < cnt; ++i) {
+				minion_set_a0(pMi, vptrMtx);
+				minion_set_a1(pMi, N);
+				minion_set_a2(pMi, vptrWk);
+				minion_set_pc_to_func_idx(pMi, ifnInv);
+				test_exec_from_pc(pMi);
+			}
+			minion_msg(pMi, "instrs executed: %d\n", pMi->instrsExecuted);
+		}
+
+		s1 = 0.0f;
+		for (i = 0; i < N*N; ++i) {
+			s1 += pMtx[i];
+		}
+
+		minion_sys_msg("s0: %f\n", s0);
+		minion_sys_msg("s1: %f\n", s1);
+		minion_sys_msg("diff: %.12f\n", s1 - s0);
+
+		minion_mem_unmap(pMi, vptrMtx);
+		minion_mem_unmap(pMi, vptrWk);
+	}
+
+	if (pMtx) { free(pMtx); }
+	if (pWk) { free(pWk); }
 }
 
 
@@ -545,6 +615,8 @@ int main(int argc, char* argv[]) {
 			test_mtx_invert_s(&mi);
 		} else if (strcmp(s_pTestName,  "perf_sincos_s") == 0) {
 			perf_sincos_s(&mi);
+		} else if (strcmp(s_pTestName,  "perf_mtxinv_s") == 0) {
+			perf_mtxinv_s(&mi);
 		}
 	} else {
 		minion_sys_err("Corrupted minion!\n");
