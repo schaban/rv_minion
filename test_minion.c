@@ -453,6 +453,8 @@ PERF_TEST_FN static void perf_sincos_s(MINION* pMi) {
 	float add = (val1 - val0) / (float)n;
 	float x = val0;
 	float sum = 0.0f;
+	double dt;
+	double t0 = time_millis();
 	pMi->instrsExecuted = 0;
 	for (i = 0; i <= n; ++i) {
 		float s;
@@ -473,8 +475,10 @@ PERF_TEST_FN static void perf_sincos_s(MINION* pMi) {
 		sum += s*s + c*c;
 		x += add;
 	}
+	dt = time_millis() - t0;
 	minion_msg(pMi, "%s sum = %f\n", s_perfNative ? "native" : "minion", sum);
 	minion_msg(pMi, "instrs executed: %d\n", pMi->instrsExecuted);
+	minion_msg(pMi, "dt: %.2f millis (%.3f sec)\n", dt, dt * 1e-3);
 }
 
 PERF_TEST_FN static void perf_mtxinv_s(MINION* pMi) {
@@ -487,6 +491,7 @@ PERF_TEST_FN static void perf_mtxinv_s(MINION* pMi) {
 	if (pMtx && pWk) {
 		int i;
 		float s0, s1;
+		double t0, dt;
 		int ifnInv = minion_find_func(pMi, "mtx_invert_s");
 		uint32_t vptrMtx = minion_mem_map(pMi, pMtx, mtxMemSize); 
 		uint32_t vptrWk = minion_mem_map(pMi, pWk, wkMemSize);
@@ -499,6 +504,7 @@ PERF_TEST_FN static void perf_mtxinv_s(MINION* pMi) {
 		}
 
 		minion_sys_msg("%s: inverting %dx%d matrix %d times...\n", s_perfNative ? "native" : "minion", N, N, cnt);
+		t0 = time_millis();
 		if (s_perfNative) {
 			for (i = 0; i < cnt; ++i) {
 				mtx_invert_s(pMtx, N, pWk);
@@ -514,6 +520,7 @@ PERF_TEST_FN static void perf_mtxinv_s(MINION* pMi) {
 			}
 			minion_msg(pMi, "instrs executed: %d\n", pMi->instrsExecuted);
 		}
+		dt = time_millis() - t0;
 
 		s1 = 0.0f;
 		for (i = 0; i < N*N; ++i) {
@@ -523,6 +530,7 @@ PERF_TEST_FN static void perf_mtxinv_s(MINION* pMi) {
 		minion_sys_msg("s0: %f\n", s0);
 		minion_sys_msg("s1: %f\n", s1);
 		minion_sys_msg("diff: %.12f\n", s1 - s0);
+		minion_sys_msg("dt: %.2f millis (%.3f sec)\n", dt, dt * 1e-3);
 
 		minion_mem_unmap(pMi, vptrMtx);
 		minion_mem_unmap(pMi, vptrWk);
