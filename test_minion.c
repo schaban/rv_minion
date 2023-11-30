@@ -22,6 +22,8 @@ static const char* s_pTestName = NULL;
 
 #include "sincos.c"
 #include "matrix.c"
+#include "rand.c"
+#include "sort.c"
 
 static void test_func_dump(MINION* pMi) {
 	const char* pTestFunc = "sin_s";
@@ -78,7 +80,7 @@ static void test_exec_from_pc(MINION* pMi) {
 		if (pMi->pcStatus & MINION_PCSTATUS_NATIVE) {
 			break;
 		}
-		if (insCount > 100000) {
+		if (insCount > 1000000) {
 			minion_err(pMi, "reached execution limit!\n");
 			break;
 		}
@@ -561,6 +563,56 @@ PERF_TEST_FN static void perf_mtxinv_s(MINION* pMi) {
 	if (pWk) { free(pWk); }
 }
 
+PERF_TEST_FN static void perf_sort_i64(MINION* pMi) {
+	int i;
+	int N = 1000;
+	size_t memSize = N*sizeof(int64_t);
+	int64_t* pVals = (int64_t*)malloc(memSize);
+	int64_t* pWk = (int64_t*)malloc(memSize);
+	uint32_t vptrWk = minion_mem_map(pMi, pWk, memSize);
+	int cnt = s_perfCount > 0 ? s_perfCount : 1000;
+	int64_t acc = 0;
+	double t0, dt;
+
+	for (i = 0; i < N; ++i) {
+		int s = 63-8;
+		int64_t x = (int64_t)rand_u16();
+		x <<= s;
+		x >>= s;
+		x *= (int64_t)rand_u16();
+		x *= (int64_t)rand_u16();
+		pVals[i] = x;
+	}
+
+	minion_sys_msg("%s: sorting int64_t[%d] %d times...\n", s_perfNative ? "native" : "minion", N, cnt);
+	t0 = time_millis();
+	if (s_perfNative) {
+		for (i = 0; i < cnt; ++i) {
+			memcpy(pWk, pVals, memSize);
+			sort_i64(pWk, N);
+			acc += pWk[0] + pWk[1];
+		}
+	} else {
+		int ifn = minion_find_func(pMi, "sort_i64");
+		for (i = 0; i < cnt; ++i) {
+			memcpy(pWk, pVals, memSize);
+			minion_set_a0(pMi, vptrWk);
+			minion_set_a1(pMi, N);
+			minion_set_pc_to_func_idx(pMi, ifn);
+			test_exec_from_pc(pMi);
+			acc += pWk[0] + pWk[1];
+		}
+	}
+	dt = time_millis() - t0;
+
+	minion_sys_msg("%s acc: %ld\n", s_perfNative ? "native" : "minion", acc);
+	minion_sys_msg("dt: %.2f millis (%.3f sec)\n", dt, dt * 1e-3);
+
+	minion_mem_unmap(pMi, vptrWk);
+	if (pVals) { free(pVals); }
+	if (pWk) { free(pWk); }
+}
+
 
 static void cli_opts(int argc, char* argv[]) {
 	int i;
@@ -650,6 +702,8 @@ int main(int argc, char* argv[]) {
 			perf_sincos_s(&mi);
 		} else if (strcmp(s_pTestName,  "perf_mtxinv_s") == 0) {
 			perf_mtxinv_s(&mi);
+		} else if (strcmp(s_pTestName,  "perf_sort_i64") == 0) {
+			perf_sort_i64(&mi);
 		}
 	} else {
 		minion_sys_err("Corrupted minion!\n");
