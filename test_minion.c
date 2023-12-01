@@ -585,6 +585,7 @@ PERF_TEST_FN static void perf_sort_i64(MINION* pMi) {
 	}
 
 	minion_sys_msg("%s: sorting int64_t[%d] %d times...\n", s_perfNative ? "native" : "minion", N, cnt);
+	pMi->instrsExecuted = 0;
 	t0 = time_millis();
 	if (s_perfNative) {
 		for (i = 0; i < cnt; ++i) {
@@ -605,6 +606,7 @@ PERF_TEST_FN static void perf_sort_i64(MINION* pMi) {
 	}
 	dt = time_millis() - t0;
 
+	if (!s_perfNative) { minion_msg(pMi, "instrs executed: %d\n", pMi->instrsExecuted); }
 	minion_sys_msg("%s acc: %ld\n", s_perfNative ? "native" : "minion", acc);
 	minion_sys_msg("dt: %.2f millis (%.3f sec)\n", dt, dt * 1e-3);
 
@@ -704,6 +706,8 @@ int main(int argc, char* argv[]) {
 			perf_mtxinv_s(&mi);
 		} else if (strcmp(s_pTestName,  "perf_sort_i64") == 0) {
 			perf_sort_i64(&mi);
+		} else {
+			minion_sys_err("unknown test routine: %s\n", s_pTestName);
 		}
 	} else {
 		minion_sys_err("Corrupted minion!\n");
