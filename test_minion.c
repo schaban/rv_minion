@@ -18,6 +18,8 @@ static size_t s_binDataSize = 0;
 
 static const char* s_pTestName = NULL;
 
+static const char* s_pDumpFuncName = NULL;
+
 #include "utils.c"
 
 #include "sincos.c"
@@ -26,19 +28,19 @@ static const char* s_pTestName = NULL;
 #include "sort.c"
 
 static void test_func_dump(MINION* pMi) {
-	const char* pTestFunc = "sin_s";
-	minion_set_pc_to_func(pMi, pTestFunc);
+	const char* pFuncName = s_pDumpFuncName ? s_pDumpFuncName : "sin_s";
+	minion_set_pc_to_func(pMi, pFuncName);
 	if (minion_valid_pc(pMi)) {
 		uint32_t i;
-		uint32_t n = minion_get_func_instr_count(pMi, pTestFunc);
+		uint32_t n = minion_get_func_instr_count(pMi, pFuncName);
 		minion_msg(pMi, "----------------------------------\n");
-		minion_msg(pMi, "func %s @ %X, %d instrs\n", pTestFunc, pMi->pc, n);
+		minion_msg(pMi, "func %s @ %X, %d instrs\n", pFuncName, pMi->pc, n);
 		for (i = 0; i < n; i++) {
 			uint32_t instr = minion_fetch_pc_instr(pMi);
 			minion_instr(pMi, instr, MINION_IMODE_ECHO);
 		}
 	} else {
-		minion_err(pMi, "test func not found!\n");
+		minion_err(pMi, "disasm: func \"%s\" not found!\n", pFuncName);
 	}
 }
 
@@ -645,6 +647,8 @@ static void cli_opts(int argc, char* argv[]) {
 				s_binMem = 1;
 			} else if (strcmp(pOpt,  "--bin-file") == 0) {
 				s_binMem = 0;
+			} else if ((offs = opt_prefix(pOpt, "--disasm-func=")) > 0) {
+				s_pDumpFuncName = pOpt + offs;
 			} else if ((offs = opt_prefix(pOpt, "--bin-path=")) > 0) {
 				s_pBinPath = pOpt + offs;
 			} else if ((offs = opt_prefix(pOpt, "--test=")) > 0) {
