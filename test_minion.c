@@ -625,27 +625,35 @@ static void cli_opts(int argc, char* argv[]) {
 		char* pOpt = argv[i];
 		size_t len = strlen(pOpt);
 		if (len > 2) {
-			if (strcmp(pOpt,  "--silent") == 0) {
+			if (strcmp(pOpt, "--silent") == 0) {
 				minion_set_silent(1);
-			} else if (strcmp(pOpt,  "--bin-info") == 0) {
+			} else if (strcmp(pOpt, "--bin-info") == 0) {
 				s_binInfo = 1;
-			} else if (strcmp(pOpt,  "--exec-dbg") == 0) {
+			} else if (strcmp(pOpt, "--exec-dbg") == 0) {
 				s_execDbg = 1;
-			} else if (strcmp(pOpt,  "--no-exec-dbg") == 0) {
+			} else if (strcmp(pOpt, "--no-exec-dbg") == 0) {
 				s_execDbg = 0;
-			}  else if (strcmp(pOpt,  "--dbg-fregs") == 0) {
+			}  else if (strcmp(pOpt, "--dbg-fregs") == 0) {
 				s_dbgFregs = 1;
-			} else if (strcmp(pOpt,  "--exec-profile") == 0) {
+			} else if (strcmp(pOpt, "--exec-profile") == 0) {
 				s_execProfile = 1;
-			} else if (strcmp(pOpt,  "--no-exec-profile") == 0) {
+			} else if (strcmp(pOpt, "--no-exec-profile") == 0) {
 				s_execProfile = 0;
-			} else if (strcmp(pOpt,  "--echo-instrs") == 0) {
+			} else if (strcmp(pOpt, "--echo-instrs") == 0) {
 				s_echoInstrs = 1;
-			} else if (strcmp(pOpt,  "--no-echo-instrs") == 0) {
+			} else if (strcmp(pOpt, "--no-echo-instrs") == 0) {
 				s_echoInstrs = 0;
-			} else if (strcmp(pOpt,  "--bin-mem") == 0) {
+			} else if (strcmp(pOpt, "--alt-regnames") == 0) {
+				minion_enable_alt_regnames(1);
+			} else if (strcmp(pOpt, "--no-alt-regnames") == 0) {
+				minion_enable_alt_regnames(0);
+			} else if (strcmp(pOpt, "--alt-mnemonics") == 0) {
+				minion_enable_alt_mnemonics(1);
+			} else if (strcmp(pOpt, "--no-alt-mnemonics") == 0) {
+				minion_enable_alt_mnemonics(0);
+			} else if (strcmp(pOpt, "--bin-mem") == 0) {
 				s_binMem = 1;
-			} else if (strcmp(pOpt,  "--bin-file") == 0) {
+			} else if (strcmp(pOpt, "--bin-file") == 0) {
 				s_binMem = 0;
 			} else if ((offs = opt_prefix(pOpt, "--disasm-func=")) > 0) {
 				s_pDumpFuncName = pOpt + offs;

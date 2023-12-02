@@ -463,3 +463,10 @@ void minion_set_silent(int flg) {
 	s_silentFlg = flg;
 }
 
+void minion_enable_alt_regnames(int flg) {
+	s_altRegNames = flg;
+}
+
+void minion_enable_alt_mnemonics(int flg) {
+	s_altMnemonics = flg;
+}

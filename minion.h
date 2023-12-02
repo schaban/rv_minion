@@ -97,6 +97,8 @@ void minion_bin_info(MINION_BIN* pBin);
 void minion_init(MINION* pMi, MINION_BIN* pBin);
 void minion_release(MINION* pMi);
 void minion_set_silent(int flg);
+void minion_enable_alt_regnames(int flg);
+void minion_enable_alt_mnemonics(int flg);
 
 void minion_instr(MINION* pMi, uint32_t instr, uint32_t mode);
 uint32_t minion_fetch_pc_instr(MINION* pMi);
