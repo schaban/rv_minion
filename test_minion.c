@@ -27,6 +27,8 @@ static const char* s_pDumpFuncName = NULL;
 #include "rand.c"
 #include "sort.c"
 
+#include "ecalls.h"
+
 static void test_func_dump(MINION* pMi) {
 	const char* pFuncName = s_pDumpFuncName ? s_pDumpFuncName : "sin_s";
 	minion_set_pc_to_func(pMi, pFuncName);
@@ -618,6 +620,85 @@ PERF_TEST_FN static void perf_sort_i64(MINION* pMi) {
 }
 
 
+#define EOUT_F0 "\x1B[96m"
+#define EOUT_F1 "\x1B[0m"
+
+static void std_emath(MINION* pMi, EMATH_ARGS* pArgs) {
+	switch (pArgs->func) {
+		case EMATH_SIN:
+			pArgs->res = sinf(pArgs->x);
+			break;
+		case EMATH_COS:
+			pArgs->res = cosf(pArgs->x);
+			break;
+		case EMATH_POW:
+			pArgs->res = powf(pArgs->x, pArgs->y);
+			break;
+	}
+}
+
+static void std_ecalls(MINION* pMi) {
+	int fn = minion_get_a7(pMi);
+	uint32_t arg = minion_get_a0(pMi);
+	void* pNative;
+	switch (fn) {
+		case ECALL_OUTSTR:
+			pNative = minion_resolve_vptr(pMi, arg);
+			if (pNative) {
+				minion_msg(pMi, EOUT_F0 "%s" EOUT_F1, pNative);
+			}
+			break;
+		case ECALL_OUTINT:
+			pNative = minion_resolve_vptr(pMi, arg);
+			if (pNative) {
+				minion_msg(pMi, EOUT_F0 "%d" EOUT_F1, *(int32_t*)pNative);
+			}
+			break;
+		case ECALL_OUTHEX:
+			pNative = minion_resolve_vptr(pMi, arg);
+			if (pNative) {
+				minion_msg(pMi, EOUT_F0 "0x%X" EOUT_F1, *(int32_t*)pNative);
+			}
+			break;
+		case ECALL_OUTPTR:
+			minion_msg(pMi, EOUT_F0 "0x%x" EOUT_F1, (uint32_t)arg);
+			break;
+		case ECALL_OUTF32:
+			pNative = minion_resolve_vptr(pMi, arg);
+			if (pNative) {
+				minion_msg(pMi, EOUT_F0 "%f" EOUT_F1, *(float*)pNative);
+			}
+			break;
+		case ECALL_ENVINFO:
+			pNative = minion_resolve_vptr(pMi, arg);
+			if (pNative) {
+				ENV_INFO* pEnvInfo = (ENV_INFO*)pNative;
+				pEnvInfo->codeOrg = pMi->codeOrg;
+			}
+			break;
+		case ECALL_STRLEN:
+			pNative = minion_resolve_vptr(pMi, arg);
+			if (pNative) {
+				minion_set_a0(pMi, (uint32_t)strlen(pNative));
+			}
+			break;
+		case ECALL_MATH:
+			pNative = minion_resolve_vptr(pMi, arg);
+			if (pNative) {
+				std_emath(pMi, (EMATH_ARGS*)pNative);
+			}
+			break;
+	}
+}
+
+static void test_ecalls(MINION* pMi) {
+	int ifn = minion_find_func(pMi, "test_ecalls");
+	pMi->ecall_fn = std_ecalls;
+	minion_set_pc_to_func_idx(pMi, ifn);
+	test_exec_from_pc(pMi);
+}
+
+
 static void cli_opts(int argc, char* argv[]) {
 	int i;
 	int offs;
@@ -710,6 +791,8 @@ int main(int argc, char* argv[]) {
 			test_sin_s(&mi);
 		} else if (strcmp(s_pTestName,  "cos_s") == 0) {
 			test_cos_s(&mi);
+		} else if (strcmp(s_pTestName,  "ecalls") == 0) {
+			test_ecalls(&mi);
 		} else if (strcmp(s_pTestName,  "mtx_invert_s") == 0) {
 			test_mtx_invert_s(&mi);
 		} else if (strcmp(s_pTestName,  "perf_sincos_s") == 0) {
