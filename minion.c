@@ -92,6 +92,12 @@ void minion_sys_msg(const char* pFmt, ...) {
 	va_end(argLst);
 }
 
+void minion_reset_sp(MINION* pMi) {
+	if (pMi) {
+		minion_set_sp(pMi, pMi->codeOrg);
+	}
+}
+
 int minion_valid_pc(MINION* pMi) {
 	int res = 0;
 	if (pMi) {
@@ -168,16 +174,32 @@ void minion_mem_unmap(MINION* pMi, uint32_t vptr) {
 	}
 }
 
-int minion_find_func(MINION* pMi, const char* pFnName) {
-	int i;
-	if (pMi && pFnName && pMi->pFuncs) {
-		for (i = 0; i < pMi->nfuncs; ++i) {
-			if (strcmp(pFnName, pMi->pFuncs[i].pName) == 0) {
+static int find_func_sub(MINION_FUNC_INFO* pFuncs, int nfuncs, const char* pFnName) {
+	if (pFuncs && pFnName) {
+		int i;
+		for (i = 0; i < nfuncs; ++i) {
+			if (strcmp(pFnName, pFuncs[i].pName) == 0) {
 				return i;
 			}
 		}
 	}
 	return -1;
+}
+
+int minion_bin_find_func(MINION_BIN* pBin, const char* pFnName) {
+	int id = -1;
+	if (pBin) {
+		id = find_func_sub(pBin->pFuncs, pBin->nfuncs, pFnName);
+	}
+	return id;
+}
+
+int minion_find_func(MINION* pMi, const char* pFnName) {
+	int id = -1;
+	if (pMi) {
+		id = find_func_sub(pMi->pFuncs, pMi->nfuncs, pFnName);
+	}
+	return id;
 }
 
 int minion_valid_func_idx(MINION* pMi, int ifn) {
