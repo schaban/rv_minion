@@ -118,6 +118,18 @@ int32_t minion_get_a0(MINION* pMi);
 void minion_set_a0(MINION* pMi, int32_t val);
 int32_t minion_get_a1(MINION* pMi);
 void minion_set_a1(MINION* pMi, int32_t val);
+int32_t minion_get_a2(MINION* pMi);
+void minion_set_a2(MINION* pMi, int32_t val);
+int32_t minion_get_a3(MINION* pMi);
+void minion_set_a3(MINION* pMi, int32_t val);
+int32_t minion_get_a4(MINION* pMi);
+void minion_set_a4(MINION* pMi, int32_t val);
+int32_t minion_get_a5(MINION* pMi);
+void minion_set_a5(MINION* pMi, int32_t val);
+int32_t minion_get_a6(MINION* pMi);
+void minion_set_a6(MINION* pMi, int32_t val);
+int32_t minion_get_a7(MINION* pMi);
+void minion_set_a7(MINION* pMi, int32_t val);
 
 int32_t minion_get_t0(MINION* pMi);
 void minion_set_t0(MINION* pMi, int32_t val);
