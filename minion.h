@@ -73,7 +73,7 @@ typedef struct _MINION {
 	void* pUser;
 	void (*ecall_fn)(struct _MINION*);
 	void (*ebreak_fn)(struct _MINION*);
-	void (*aext_fn)(struct _MINION*, uint32_t instr, uint32_t mode);
+	void (*aext_fn)(struct _MINION*, uint32_t op, int rd, int rs1, int rs2, uint32_t instr, uint32_t mode);
 	void (*bext_logic_fn)(struct _MINION*, int rd, int rs1, int rs2, uint32_t instr, uint32_t mode);
 	MINION_MEM_MAP memMap[16];
 } MINION;

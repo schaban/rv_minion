@@ -270,7 +270,11 @@ static void arith_I(MINION* pMi, uint32_t instr, uint32_t mode) {
 
 static void dispatch_A(MINION* pMi, uint32_t instr, uint32_t mode) {
 	if (pMi->aext_fn) {
-		pMi->aext_fn(pMi, instr, mode);
+		uint32_t op = instr >> 27;
+		int rd = get_rd(instr);
+		int rs1 = get_rs1(instr);
+		int rs2 = get_rs2(instr);
+		pMi->aext_fn(pMi, op, rd, rs1, rs2, instr, mode);
 	}
 }
 
