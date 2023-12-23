@@ -94,7 +94,6 @@ static void arith_R(MINION* pMi, uint32_t instr, uint32_t mode) {
 	int rs2 = get_rs2(instr);
 	int fn3 = get_funct3(instr);
 	int fn7 = get_funct7(instr);
-	int bflg = 0;
 	const char* pOpName = "<invalid_arith_R>";
 	ARITH_OP opFunc = NULL;
 
@@ -128,7 +127,6 @@ static void arith_R(MINION* pMi, uint32_t instr, uint32_t mode) {
 		case 4:
 			pOpName = "xor";
 			opFunc = arith_xor;
-			bflg = (instr >> 30) & 1;
 			break;
 		case 5:
 			if (fn7 == 0) {
@@ -142,18 +140,16 @@ static void arith_R(MINION* pMi, uint32_t instr, uint32_t mode) {
 		case 6:
 			pOpName = "or";
 			opFunc = arith_or;
-			bflg = (instr >> 30) & 1;
 			break;
 		case 7:
 			pOpName = "and";
 			opFunc = arith_and;
-			bflg = (instr >> 30) & 1;
 			break;
 	}
 
 	if (mode & MINION_IMODE_ECHO) {
-		minion_msg(pMi, "%08X: %08X  %s%s  %s, %s, %s\n",
-		           pMi->pc, instr, pOpName, bflg ? ".b" : "",
+		minion_msg(pMi, "%08X: %08X  %s  %s, %s, %s\n",
+		           pMi->pc, instr, pOpName,
 		           minion_get_reg_name(rd),
 		           minion_get_reg_name(rs1),
 		           minion_get_reg_name(rs2)
@@ -161,15 +157,7 @@ static void arith_R(MINION* pMi, uint32_t instr, uint32_t mode) {
 	}
 
 	if (mode & MINION_IMODE_EXEC) {
-		if (bflg) {
-			if (bflg & 1) {
-				if (pMi->bext_logic_fn) {
-					pMi->bext_logic_fn(pMi, rd, rs1, rs2, instr, mode);
-				}
-			}
-		} else {
-			arith_rs1_rs2(pMi, rd, rs1, rs2, opFunc);
-		}
+		arith_rs1_rs2(pMi, rd, rs1, rs2, opFunc);
 	}
 }
 
