@@ -163,6 +163,8 @@ void minion_set_fa0_d(MINION* pMi, double val);
 double minion_get_fa1_d(MINION* pMi);
 void minion_set_fa1_d(MINION* pMi, double val);
 
+const char* minion_get_reg_name(int reg);
+const char* minion_get_f_reg_name(int reg);
 void minion_dump_regs(MINION* pMi);
 void minion_dump_fregs_s(MINION* pMi);
 void minion_dump_fregs_d(MINION* pMi);
