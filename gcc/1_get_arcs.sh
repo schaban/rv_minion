@@ -23,6 +23,10 @@ if [ "$#" -gt 0 ]; then
 			GCC_URL=$GNUFTP/gcc/gcc-11.2.0/gcc-11.2.0.tar.xz
 			shift
 		;;
+		gcc15)
+			GCC_URL=$GNUFTP/gcc/gcc-15.1.0/gcc-15.1.0.tar.xz
+			shift
+		;;
 	esac
 fi
 wget $GCC_URL
