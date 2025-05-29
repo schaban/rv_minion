@@ -15,12 +15,16 @@ cd $_ARC_DIR_
 GCC_URL=$GNUFTP/gcc/gcc-13.2.0/gcc-13.2.0.tar.xz
 if [ "$#" -gt 0 ]; then
 	case "$1" in
+		gcc11)
+			GCC_URL=$GNUFTP/gcc/gcc-11.2.0/gcc-11.2.0.tar.xz
+			shift
+		;;
 		gcc12)
 			GCC_URL=$GNUFTP/gcc/gcc-12.2.0/gcc-12.2.0.tar.xz
 			shift
 		;;
-		gcc11)
-			GCC_URL=$GNUFTP/gcc/gcc-11.2.0/gcc-11.2.0.tar.xz
+		gcc14)
+			GCC_URL=$GNUFTP/gcc/gcc-14.3.0/gcc-14.3.0.tar.xz
 			shift
 		;;
 		gcc15)
