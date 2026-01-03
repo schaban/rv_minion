@@ -679,7 +679,7 @@ static void std_ecalls(MINION* pMi) {
 		case ECALL_STRLEN:
 			pNative = minion_resolve_vptr(pMi, arg);
 			if (pNative) {
-				minion_set_a0(pMi, (uint32_t)strlen(pNative));
+				minion_set_a0(pMi, (uint32_t)strlen((const char*)pNative));
 			}
 			break;
 		case ECALL_MATH:
