@@ -10,6 +10,8 @@ fi
 GNUFTP=https://ftpmirror.gnu.org
 #GNUFTP=https://ftp.gnu.org/gnu
 
+BINUTILS_VER=2.37
+
 cd $_ARC_DIR_
 
 GCC_URL=$GNUFTP/gcc/gcc-13.2.0/gcc-13.2.0.tar.xz
@@ -29,13 +31,14 @@ if [ "$#" -gt 0 ]; then
 		;;
 		gcc15)
 			GCC_URL=$GNUFTP/gcc/gcc-15.1.0/gcc-15.1.0.tar.xz
+			BINUTILS_VER=2.45.1
 			shift
 		;;
 	esac
 fi
 wget $GCC_URL
 
-wget $GNUFTP/binutils/binutils-2.37.tar.xz
+wget $GNUFTP/binutils/binutils-$BINUTILS_VER.tar.xz
 wget $GNUFTP/mpfr/mpfr-4.1.0.tar.xz
 wget $GNUFTP/gmp/gmp-6.2.1.tar.xz
 wget $GNUFTP/mpc/mpc-1.2.1.tar.gz
