@@ -319,7 +319,6 @@ static void minion_bin_in(MINION_BIN* pBin, MINION_IN_STREAM* pIn) {
 	while (1) {
 		const char* pArg;
 		pStr = ins_gets(pIn, pBin);
-		pArg = ck_str_cmd(pStr, "$code");
 		if ((pArg = ck_str_cmd(pStr, "$code"))) {
 			pBin->codeOrg = u32_hex(pArg, skip_chars(pArg) - pArg);
 		} else if ((pArg = ck_str_cmd(pStr, "$data"))) {
