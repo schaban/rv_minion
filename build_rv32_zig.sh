@@ -9,8 +9,7 @@ _READELF_=llvm-readelf
 
 mkdir -p $OUT_DIR
 
-
-zig build-exe -target riscv32-freestanding -mcpu=baseline_rv32-c -OReleaseSafe $PROJ_NAME.zig -femit-bin=$OUT_DIR/$PROJ_NAME.elf
+zig build-exe -target riscv32-freestanding -mcpu=baseline_rv32-c -OReleaseSafe $PROJ_NAME.zig -femit-bin=$OUT_DIR/$PROJ_NAME.elf -T test_zig.ld $*
 $_OBJCOPY_ -O binary $OUT_DIR/$PROJ_NAME.elf $OUT_DIR/$PROJ_NAME.bin
 $_OBJDUMP_ -d $OUT_DIR/$PROJ_NAME.elf > $OUT_DIR/$PROJ_NAME.txt
 $_READELF_ -s -S --wide $OUT_DIR/$PROJ_NAME.elf | tail -n +5 > $OUT_DIR/$PROJ_NAME.info
