@@ -470,6 +470,8 @@ void minion_init(MINION* pMi, MINION_BIN* pBin) {
 	minion_set_ra(pMi, MINION_PC_NATIVE);
 	minion_set_sp(pMi, pMi->codeOrg);
 	minion_set_gp(pMi, pBin->gpIni);
+
+	pMi->faultFlags = 0;
 }
 
 void minion_release(MINION* pMi) {

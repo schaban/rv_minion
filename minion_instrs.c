@@ -1138,8 +1138,10 @@ void minion_instr(MINION* pMi, uint32_t instr, uint32_t mode) {
 	uint32_t op1 = (op >> 2) & 7;
 	uint32_t op2 = (op >> 5) & 3;
 	int is32 = ((instr & 3) == 3) && (op1 != 7);
+	if (pMi && pMi->faultFlags != 0) return;
 	if (!is32) {
 		minion_err(pMi, "not an rv32g instruction: %X\n", instr);
+		pMi->faultFlags |= 1;
 		return;
 	}
 	if (!pMi) {

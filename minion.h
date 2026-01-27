@@ -69,6 +69,7 @@ typedef struct _MINION {
 	uint32_t pcStatus;
 	uint32_t fcsr;
 	uint32_t instrsExecuted;
+	uint32_t faultFlags;
 	void* pStkMem;
 	void* pUser;
 	void (*ecall_fn)(struct _MINION*);
